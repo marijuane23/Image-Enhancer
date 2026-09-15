@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Super-Resolution & Image Enhancer</title>
+  <meta name="description" content="Upscale and restore low-resolution images into crystal-clear 4K resolution using AI super-resolution. Fast, private, and free.">
+  
+  <!-- Modern Google Fonts: Outfit for display, Plus Jakarta Sans for UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow layers -->
+  <div class="glow-sphere glow-sphere-1" aria-hidden="true"></div>
+  <div class="glow-sphere glow-sphere-2" aria-hidden="true"></div>
+  <div class="glow-grid" aria-hidden="true"></div>
+
+  <!-- Main App Shell -->
+  <div class="app-container">
+    <!-- Navigation / Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+          </svg>
+        </div>
+        <span class="brand-name">FREE <span class="brand-accent">4K Image Enhancer</span></span>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live Backend Status Pill -->
+        <div id="backend-status" class="status-pill checking" title="Click to test or change backend URL">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="status-label">Backend:</span>
+          <span id="status-text">Checking...</span>
+        </div>
+
+        <!-- API Config Modal Trigger -->
+        <button id="config-btn" class="icon-button" aria-label="Configure API Endpoint" title="Configure API Endpoint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Hero Content -->
+    <main class="main-content">
+      <section class="hero-section">
+        <div class="pill-badge">
+          <svg class="badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+          </svg>
+          <span>Real-ESRGAN AI Super-Resolution</span>
+        </div>
+        <h1 class="hero-title">
+          Upscale Any Image to <span class="gradient-text">4K Clarity</span>
+        </h1>
+        <p class="hero-description">
+          Breathe new life into blurry, compressed, or low-res photos. Restore sharp details, boost micro-textures, and generate ultra-high-definition output.
+        </p>
+      </section>
+
+      <!-- Central Interactive Canvas / Workspace -->
+      <section class="workbench-section">
+        <div class="glass-card workbench-card">
+          <!-- Dropzone Container -->
+          <div id="drop-zone" class="drop-zone" tabindex="0" role="region" aria-label="Image drop zone">
+            <input type="file" id="file-input" class="file-input" accept="image/jpeg,image/png,image/webp">
+            
+            <div class="drop-zone-content">
+              <div class="upload-icon-wrapper">
+                <div class="upload-icon-halo"></div>
+                <svg class="upload-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" x2="12" y1="3" y2="15"/>
+                </svg>
+              </div>
+
+              <h2 class="drop-heading">Drag & drop your photo here</h2>
+              <p class="drop-subtext">or click to browse from your device</p>
+              
+              <button id="browse-btn" type="button" class="btn btn-primary">
+                <span>Select Image</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+
+              <div class="format-badges">
+                <span class="format-tag">JPG</span>
+                <span class="format-tag">PNG</span>
+                <span class="format-tag">WEBP</span>
+                <span class="format-separator">•</span>
+                <span class="format-limit">Max 10 MB</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview & Comparison Stage (Phase 5: Before/After Slider) -->
+          <div id="preview-stage" class="preview-stage hidden">
+            <div class="stage-header">
+              <div class="file-meta">
+                <span id="file-name" class="file-name">filename.jpg</span>
+                <span id="file-stats" class="file-stats">1920×1080 • 1.2 MB</span>
+              </div>
+              <button id="reset-btn" class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+                Change Image
+              </button>
+            </div>
+
+            <!-- Single source preview (shown while uploading / before completion) -->
+            <div id="stage-body-upload" class="stage-body">
+              <div class="image-preview-wrapper">
+                <img id="image-preview" src="" alt="Uploaded source image preview" class="source-preview">
+                <div class="preview-tag source-tag">Original</div>
+              </div>
+            </div>
+
+            <!-- Before / After comparison slider (revealed after job completes) -->
+            <div id="comparison-stage" class="comparison-stage hidden">
+              <div id="comparison-container" class="comparison-container">
+                <!-- Enhanced (bottom layer — full width) -->
+                <div class="compare-layer compare-enhanced">
+                  <img id="enhanced-preview" src="" alt="AI enhanced 4K output" class="compare-img">
+                  <div class="compare-label compare-label-right">4K Enhanced</div>
+                </div>
+                <!-- Original (top layer — clipped by slider) -->
+                <div id="compare-original-layer" class="compare-layer compare-original" style="width: 50%">
+                  <img id="compare-original-img" src="" alt="Original image for comparison" class="compare-img">
+                  <div class="compare-label compare-label-left">Original</div>
+                </div>
+                <!-- Divider handle -->
+                <div id="compare-handle" class="compare-handle" style="left: 50%" role="slider" aria-label="Comparison slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
+                  <div class="handle-bar"></div>
+                  <div class="handle-grip">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M9 18l-6-6 6-6M15 6l6 6-6 6"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <p class="comparison-hint">
+                <svg class="hint-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Drag slider to compare Original vs 4K Enhanced</span>
+                <svg class="hint-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </p>
+            </div>
+
+            <!-- Job Progress Tracker -->
+            <div id="progress-tracker" class="progress-tracker hidden">
+              <div class="progress-header">
+                <div class="progress-status-row">
+                  <span id="progress-status-badge" class="status-indicator-badge processing">
+                    <span class="badge-dot"></span>
+                    <span id="progress-status-label">Queued</span>
+                  </span>
+                  <span id="job-id-tag" class="job-id-tag">Job ID: --</span>
+                </div>
+                <p id="progress-message" class="progress-message">Waiting to start...</p>
+              </div>
+              <div class="progress-bar-wrapper">
+                <div class="progress-bar-track">
+                  <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                </div>
+                <span id="progress-percent" class="progress-percent">0%</span>
+              </div>
+              <div id="completed-result" class="completed-result hidden">
+                <div class="result-stats">
+                  <div class="result-stat">
+                    <span class="stat-label">Engine</span>
+                    <span id="result-engine" class="stat-value">--</span>
+                  </div>
+                  <div class="result-stat">
+                    <span class="stat-label">Output</span>
+                    <span id="result-output-dims" class="stat-value">--</span>
+                  </div>
+                  <div class="result-stat">
+                    <span class="stat-label">Time</span>
+                    <span id="result-time" class="stat-value">--</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stage-actions">
+              <button id="enhance-btn" class="btn btn-accent btn-lg">
+                <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+                </svg>
+                <span id="enhance-btn-text">Upload &amp; Enhance</span>
+              </button>
+              <div id="download-actions" class="download-actions hidden">
+                <div class="format-select-wrapper">
+                  <label for="download-format-select" class="format-select-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>Format</span>
+                  </label>
+                  <div class="custom-select-box">
+                    <select id="download-format-select" class="format-select" aria-label="Select download image format" title="Choose format to download">
+                      <option value="png" selected>PNG</option>
+                      <option value="jpg">JPG</option>
+                      <option value="jpeg">JPEG</option>
+                      <option value="webp">WEBP</option>
+                    </select>
+                    <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  </div>
+                </div>
+                <a id="download-btn" class="btn btn-primary btn-lg" href="#" target="_blank">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" x2="12" y1="15" y2="3"/>
+                  </svg>
+                  <span>Download 4K</span>
+                </a>
+              </div>
+              <div id="upload-error-msg" class="upload-error-msg hidden"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notification Toast Container -->
+      <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+      <!-- Highlights / Value Propositions -->
+      <section class="features-section">
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-cyan" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="11" y1="8" x2="11" y2="14"/>
+              <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+          </div>
+          <h3>AI Detail Reconstruction</h3>
+          <p>Real-ESRGAN synthesizes missing high-frequency details instead of naive pixel stretching.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-purple" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="3" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+              <path d="M7 8l2 2-2 2"/>
+              <path d="M17 8l-2 2 2 2"/>
+            </svg>
+          </div>
+          <h3>True 4K Target (3840×2160)</h3>
+          <p>Intelligently scales up to 4K resolution while strictly preserving original aspect ratio.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon feature-icon-green" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <h3>Private & Auto-Purged</h3>
+          <p>Files are stored in ephemeral temp memory and automatically purged post-download.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <p class="footer-credit">AI Super-Resolution &amp; Image Enhancer • Developer: <a href="https://github.com/marijuane23" target="_blank" rel="noopener noreferrer">@Marijuane23</a></p>
+        <div class="footer-social-links">
+          <a href="https://github.com/marijuane23" target="_blank" rel="noopener noreferrer" class="social-icon-btn github-btn" aria-label="GitHub Profile" title="Visit GitHub">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+          </a>
+          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="social-icon-btn facebook-btn" aria-label="Facebook Profile" title="Visit Facebook">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- API Endpoint Configuration Modal -->
+  <div id="config-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-panel glass-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Backend API Settings</h3>
+        <button id="modal-close-btn" class="icon-button" aria-label="Close dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label for="api-url-input" class="input-label">FastAPI Backend Endpoint URL</label>
+        <p class="input-hint">For local testing, use <code>http://localhost:8000</code>. For production, enter your Render service URL.</p>
+        <input type="url" id="api-url-input" class="text-input" placeholder="http://localhost:8000" spellcheck="false">
+        <div id="modal-test-status" class="modal-test-status"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-test-btn" class="btn btn-secondary">Test Connection</button>
+        <button id="modal-save-btn" class="btn btn-primary">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

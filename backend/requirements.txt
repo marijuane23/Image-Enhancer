@@ -1,0 +1,10 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+python-multipart>=0.0.9
+pillow>=10.0.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# Optional: Real-ESRGAN AI inference (CPU-only on Render free tier)
+# Uncomment the line below to enable PyTorch — adds ~800MB to install time.
+# torch>=2.0.0 --index-url https://download.pytorch.org/whl/cpu

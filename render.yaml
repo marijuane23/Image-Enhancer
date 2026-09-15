@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: image-4k-enhancer-api
+    runtime: python
+    # Render runs all commands relative to this rootDir
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python download_weights.py
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free         # Change to "starter" or "standard" to avoid cold starts
+    autoDeploy: true   # Redeploy automatically on every push to the connected branch
+    envVars:
+      # Set this to your GitHub Pages URL after enabling it, e.g.:
+      # https://marijuane23.github.io/Image-Enhancer
+      - key: ALLOWED_ORIGINS
+        value: https://marijuane23.github.io
+      - key: PYTHON_VERSION
+        value: "3.11.0"

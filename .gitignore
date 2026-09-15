@@ -134,3 +134,37 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Backend temp storage
+backend/temp/*
+!backend/temp/.gitkeep
+
+# Model weights — downloaded at Render build time via download_weights.py
+backend/weights/*.pth
+!backend/weights/.gitkeep
