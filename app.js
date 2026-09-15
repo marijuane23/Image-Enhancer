@@ -8,7 +8,7 @@
  */
 
 const CONFIG = {
-  DEFAULT_API_URL: 'http://localhost:8000',
+  DEFAULT_API_URL: 'https://image-enhancer-94el.onrender.com',
   STORAGE_KEY: 'lumix_api_url',
   MAX_FILE_SIZE: 10 * 1024 * 1024,
   ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
