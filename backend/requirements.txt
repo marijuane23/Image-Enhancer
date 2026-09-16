@@ -5,6 +5,7 @@ pillow>=10.0.0
 numpy>=1.24.0
 requests>=2.31.0
 
-# Optional: Real-ESRGAN AI inference (CPU-only on Render free tier)
-# Uncomment the line below to enable PyTorch — adds ~800MB to install time.
-# torch>=2.0.0 --index-url https://download.pytorch.org/whl/cpu
+# Real-ESRGAN AI inference — CPU-only wheel (no CUDA drivers needed)
+# Render installs this directly from PyTorch CPU wheel repo
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0.0

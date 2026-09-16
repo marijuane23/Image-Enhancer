@@ -112,6 +112,20 @@ def calculate_4k_dimensions(width: int, height: int, max_w: int = 3840, max_h: i
     return new_width, new_height, scale_factor
 
 
+def ensure_weights_available() -> bool:
+    """Ensure weights file exists; downloads it if missing."""
+    if MODEL_PATH.exists() and MODEL_PATH.stat().st_size > 10 * 1024 * 1024:
+        return True
+    try:
+        from download_weights import download_weights
+        logger.info(f"Weights not found at {MODEL_PATH}. Initiating automatic download...")
+        download_weights()
+        return MODEL_PATH.exists()
+    except Exception as exc:
+        logger.error(f"Error ensuring weights available: {exc}")
+        return False
+
+
 def get_real_esrgan_model():
     """
     Lazy load Real-ESRGAN model onto CPU device.
@@ -124,8 +138,9 @@ def get_real_esrgan_model():
         return _loaded_model
 
     if not MODEL_PATH.exists():
-        logger.warning(f"Model weights not found at {MODEL_PATH}. Downloading or using fallback.")
-        return None
+        logger.warning(f"Model weights not found at {MODEL_PATH}. Initiating automatic download...")
+        if not ensure_weights_available():
+            return None
 
     try:
         model = RRDBNet(num_in_ch=3, num_out_ch=3, scale=4, num_feat=64, num_block=23, num_grow_ch=32)
@@ -162,9 +177,9 @@ def run_ai_inference(pil_img: Image.Image, tile_size: int = 256, tile_pad: int =
         output_np = output_tensor.squeeze(0).clamp(0, 1).numpy().transpose(1, 2, 0)
         return Image.fromarray((output_np * 255.0).round().astype(np.uint8))
 
-    # Tiled inference for large images to prevent OOM
+    # Tiled inference for large images to prevent OOM (using uint8 array to save 75% RAM)
     out_h, out_w = h * scale, w * scale
-    output_np = np.zeros((out_h, out_w, c), dtype=np.float32)
+    output_np = np.zeros((out_h, out_w, c), dtype=np.uint8)
 
     tiles_x = math.ceil(w / tile_size)
     tiles_y = math.ceil(h / tile_size)
@@ -194,22 +209,25 @@ def run_ai_inference(pil_img: Image.Image, tile_size: int = 256, tile_pad: int =
                 crop_left = (x_start - x_pad_start) * scale
                 crop_right = crop_left + (x_end - x_start) * scale
 
-                cropped_tile = tile_out[crop_top:crop_bottom, crop_left:crop_right]
+                cropped_tile = (tile_out[crop_top:crop_bottom, crop_left:crop_right] * 255.0).round().astype(np.uint8)
 
                 # Stitch into final output
                 output_np[y_start * scale:y_end * scale, x_start * scale:x_end * scale] = cropped_tile
 
-    return Image.fromarray((output_np * 255.0).round().astype(np.uint8))
+    return Image.fromarray(output_np)
 
 
 def run_enhanced_fallback(pil_img: Image.Image, target_w: int, target_h: int) -> Image.Image:
     """
-    High-fidelity Lanczos resampling + Unsharp Mask edge sharpening filter.
-    Provides fast, crisp, reliable scaling without GPU requirements.
+    High-fidelity Lanczos resampling + detail enhancement filter.
+    Provides fast, crisp, reliable scaling with clear edge definition.
     """
     upscaled = pil_img.resize((target_w, target_h), Image.Resampling.LANCZOS)
-    sharpened = upscaled.filter(ImageFilter.UnsharpMask(radius=1.8, percent=130, threshold=3))
-    return sharpened
+    sharpened = upscaled.filter(ImageFilter.UnsharpMask(radius=2.2, percent=160, threshold=2))
+    from PIL import ImageEnhance
+    contrast = ImageEnhance.Contrast(sharpened).enhance(1.05)
+    enhanced = ImageEnhance.Sharpness(contrast).enhance(1.2)
+    return enhanced
 
 
 def enhance_image(
@@ -250,12 +268,21 @@ def enhance_image(
     target_w, target_h, scale_factor = calculate_4k_dimensions(orig_w, orig_h)
 
     # 3. Choose engine and process
-    engine_used = "Lanczos High-Fidelity + Unsharp Mask"
+    engine_used = "Lanczos High-Fidelity + Edge Enhancement"
     enhanced_img = None
 
     if engine in ("auto", "ai"):
         try:
-            enhanced_img = run_ai_inference(img)
+            # Pre-cap input dimension if excessively large to protect CPU & Render 512MB RAM
+            max_ai_dim = 1920
+            ai_input = img
+            if max(orig_w, orig_h) > max_ai_dim:
+                scale_down = max_ai_dim / max(orig_w, orig_h)
+                new_w = round(orig_w * scale_down)
+                new_h = round(orig_h * scale_down)
+                ai_input = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+            enhanced_img = run_ai_inference(ai_input)
             engine_used = "Real-ESRGAN Super-Resolution (AI)"
         except Exception as e:
             logger.info(f"AI engine not active or failed ({e}), using enhanced Lanczos pipeline.")

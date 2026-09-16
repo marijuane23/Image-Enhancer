@@ -12,13 +12,26 @@ const CONFIG = {
   STORAGE_KEY: 'lumix_api_url',
   MAX_FILE_SIZE: 10 * 1024 * 1024,
   ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
-  HEALTH_CHECK_INTERVAL: 15000,
+  HEALTH_CHECK_INTERVAL: 15000,  // Re-check interval when online
+  HEALTH_CHECK_RETRY_INTERVAL: 5000, // Fast retry when offline/waking
+  HEALTH_CHECK_TIMEOUT: 65000,  // 65s — covers Render free-tier cold starts (30-60s)
   POLL_INTERVAL: 2000,
   POLL_MAX_ATTEMPTS: 150  // 5 minutes max
 };
 
+function getInitialApiUrl() {
+  const saved = localStorage.getItem(CONFIG.STORAGE_KEY);
+  // If hosted on HTTPS (like GitHub Pages) and the saved URL is HTTP localhost,
+  // automatically upgrade to DEFAULT_API_URL to prevent mixed content blocking in Brave/Edge
+  if (window.location.protocol === 'https:' && saved && (saved.startsWith('http://localhost') || saved.startsWith('http://127.0.0.1'))) {
+    localStorage.setItem(CONFIG.STORAGE_KEY, CONFIG.DEFAULT_API_URL);
+    return CONFIG.DEFAULT_API_URL;
+  }
+  return saved || CONFIG.DEFAULT_API_URL;
+}
+
 let state = {
-  apiUrl: localStorage.getItem(CONFIG.STORAGE_KEY) || CONFIG.DEFAULT_API_URL,
+  apiUrl: getInitialApiUrl(),
   selectedFile: null,
   isBackendOnline: false,
   currentJobId: null,
@@ -77,8 +90,19 @@ const elements = {
 
 function init() {
   bindEvents();
-  checkBackendHealth();
-  setInterval(checkBackendHealth, CONFIG.HEALTH_CHECK_INTERVAL);
+  startHealthPolling();
+}
+
+let _healthTimer = null;
+
+function startHealthPolling() {
+  clearTimeout(_healthTimer);
+  checkBackendHealth().then(online => {
+    const nextInterval = online
+      ? CONFIG.HEALTH_CHECK_INTERVAL
+      : CONFIG.HEALTH_CHECK_RETRY_INTERVAL;
+    _healthTimer = setTimeout(startHealthPolling, nextInterval);
+  });
 }
 
 function bindEvents() {
@@ -140,12 +164,16 @@ function bindEvents() {
 // ── Health Check ──────────────────────────────────────────────────────────────
 
 async function checkBackendHealth() {
-  updateStatusIndicator('checking', 'Checking...');
+  // Only show 'Waking up' if we were previously offline, not on every poll
+  if (!state.isBackendOnline) {
+    updateStatusIndicator('waking', 'Waking up...');
+  }
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), CONFIG.HEALTH_CHECK_TIMEOUT);
     const response = await fetch(`${state.apiUrl}/health`, {
       method: 'GET',
+      mode: 'cors',
       headers: { 'Accept': 'application/json' },
       signal: controller.signal
     });
@@ -167,7 +195,7 @@ async function checkBackendHealth() {
 }
 
 function updateStatusIndicator(cls, label) {
-  elements.backendStatus.classList.remove('online', 'offline', 'checking');
+  elements.backendStatus.classList.remove('online', 'offline', 'checking', 'waking');
   elements.backendStatus.classList.add(cls);
   elements.statusText.textContent = label;
 }
@@ -198,8 +226,14 @@ async function handleTestConnection() {
   elements.modalTestBtn.disabled = true;
   try {
     const controller = new AbortController();
-    setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(`${testUrl}/health`, { headers: { Accept: 'application/json' }, signal: controller.signal });
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const res = await fetch(`${testUrl}/health`, {
+      method: 'GET',
+      mode: 'cors',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
     if (res.ok) {
       const data = await res.json();
       elements.modalTestStatus.innerHTML = `
@@ -287,9 +321,10 @@ function initComparisonSlider() {
   function setSliderPosition(clientX) {
     const rect = container.getBoundingClientRect();
     let pct = (clientX - rect.left) / rect.width;
-    pct = Math.max(0.03, Math.min(0.97, pct));
+    pct = Math.max(0.02, Math.min(0.98, pct));
     const pctPx = `${(pct * 100).toFixed(2)}%`;
-    elements.compareOriginalLayer.style.width = pctPx;
+    elements.compareOriginalLayer.style.clipPath = `inset(0 calc(100% - ${pctPx}) 0 0)`;
+    elements.compareOriginalLayer.style.webkitClipPath = `inset(0 calc(100% - ${pctPx}) 0 0)`;
     handle.style.left = pctPx;
     handle.setAttribute('aria-valuenow', Math.round(pct * 100));
   }
@@ -428,7 +463,8 @@ function onJobCompleted(job) {
   elements.comparisonStage.classList.remove('hidden');
 
   // Reset slider to 50%
-  elements.compareOriginalLayer.style.width = '50%';
+  elements.compareOriginalLayer.style.clipPath = 'inset(0 50% 0 0)';
+  elements.compareOriginalLayer.style.webkitClipPath = 'inset(0 50% 0 0)';
   elements.compareHandle.style.left = '50%';
   elements.compareHandle.setAttribute('aria-valuenow', '50');
   // ─────────────────────────────────────────────────────────────────────────

@@ -22,9 +22,18 @@ async def lifespan(app: FastAPI):
                 print(f"[cleanup] Error during periodic cleanup: {exc}")
             await asyncio.sleep(3600)  # run every hour
 
+    async def _prewarm_weights():
+        try:
+            from services.upscaler import ensure_weights_available
+            await asyncio.to_thread(ensure_weights_available)
+        except Exception as exc:
+            print(f"[prewarm] Note: {exc}")
+
     cleanup_task = asyncio.create_task(_cleanup_loop())
+    prewarm_task = asyncio.create_task(_prewarm_weights())
     yield
     cleanup_task.cancel()
+    prewarm_task.cancel()
     try:
         await cleanup_task
     except asyncio.CancelledError:
@@ -44,6 +53,7 @@ allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") i
 
 if not allowed_origins:
     allowed_origins = [
+        "https://marijuane23.github.io",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5500",
@@ -61,6 +71,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 @app.get("/")

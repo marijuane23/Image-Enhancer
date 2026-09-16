@@ -193,6 +193,17 @@ body {
   box-shadow: 0 0 8px var(--status-checking);
 }
 
+.status-pill.waking .status-dot {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: wakingPulse 1s infinite;
+}
+
+@keyframes wakingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 @keyframes pulseDot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.85); }
@@ -213,6 +224,10 @@ body {
 
 .status-pill.offline #status-text {
   color: var(--status-offline);
+}
+
+.status-pill.waking #status-text {
+  color: #f59e0b;
 }
 
 /* Icon Buttons */
@@ -1560,7 +1575,10 @@ body {
 
 .compare-original {
   z-index: 2;
-  right: auto;
+  inset: 0;
+  width: 100%;
+  clip-path: inset(0 50% 0 0);
+  -webkit-clip-path: inset(0 50% 0 0);
 }
 
 .compare-img {
