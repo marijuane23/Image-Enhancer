@@ -134,31 +134,44 @@ def run_background_enhancement(
     if not job:
         return
 
-    try:
-        # 1. Update status to processing
-        job["status"] = "processing"
-        job["progress"] = 25
-        job["progress_message"] = "Processing image through super-resolution neural network..."
-        save_job(job_id, job)
+    def update_progress(pct: int, msg: str):
+        j = get_job(job_id)
+        if j:
+            j["status"] = "processing" if pct < 100 else "completed"
+            j["progress"] = pct
+            j["progress_message"] = msg
+            save_job(job_id, j)
 
-        # 2. Run enhancement pipeline
-        result = enhance_image(input_path, output_path, engine=engine)
+    try:
+        update_progress(15, "Initializing 4K enhancement pipeline...")
+
+        # 2. Run enhancement pipeline with live progress reporting
+        result = enhance_image(
+            input_path,
+            output_path,
+            engine=engine,
+            progress_callback=update_progress
+        )
 
         # 3. Mark completed
-        job["status"] = "completed"
-        job["progress"] = 100
-        job["progress_message"] = "Enhancement complete! 4K output ready."
-        job["completed_at"] = datetime.utcnow().isoformat() + "Z"
-        job["result"] = result
-        save_job(job_id, job)
+        job = get_job(job_id)
+        if job:
+            job["status"] = "completed"
+            job["progress"] = 100
+            job["progress_message"] = "Enhancement complete! 4K output ready."
+            job["completed_at"] = datetime.utcnow().isoformat() + "Z"
+            job["result"] = result
+            save_job(job_id, job)
 
     except Exception as exc:
-        job["status"] = "failed"
-        job["progress"] = 100
-        job["progress_message"] = "Processing failed."
-        job["error"] = str(exc)
-        job["failed_at"] = datetime.utcnow().isoformat() + "Z"
-        save_job(job_id, job)
+        job = get_job(job_id)
+        if job:
+            job["status"] = "failed"
+            job["progress"] = 100
+            job["progress_message"] = "Processing failed."
+            job["error"] = str(exc)
+            job["failed_at"] = datetime.utcnow().isoformat() + "Z"
+            save_job(job_id, job)
 
 
 @router.post("/enhance", status_code=status.HTTP_202_ACCEPTED)

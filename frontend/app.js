@@ -16,7 +16,7 @@ const CONFIG = {
   HEALTH_CHECK_RETRY_INTERVAL: 5000, // Fast retry when offline/waking
   HEALTH_CHECK_TIMEOUT: 65000,  // 65s — covers Render free-tier cold starts (30-60s)
   POLL_INTERVAL: 2000,
-  POLL_MAX_ATTEMPTS: 150  // 5 minutes max
+  POLL_MAX_ATTEMPTS: 300  // 10 minutes max
 };
 
 function getInitialApiUrl() {
@@ -443,7 +443,8 @@ function onJobCompleted(job) {
   const od = result.output_dimensions || {};
   elements.resultEngine.textContent = (result.engine || 'Unknown')
     .replace('High-Fidelity + Unsharp Mask', 'Lanczos HQ')
-    .replace('Super-Resolution (AI)', 'Real-ESRGAN AI');
+    .replace('Real-ESRGAN Super-Resolution (AI)', 'Real-ESRGAN AI')
+    .replace('Lumix 4K Neural Engine', 'Lumix 4K Neural');
   elements.resultOutputDims.textContent = od.width && od.height ? `${od.width} × ${od.height} px` : '--';
   elements.resultTime.textContent = result.processing_time_sec != null ? `${result.processing_time_sec}s` : '--';
   elements.completedResult.classList.remove('hidden');
